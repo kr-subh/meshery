@@ -68,9 +68,11 @@ func (ep *EnvironmentPersister) GetEnvironments(orgID, search, order, page, page
 	if err != nil {
 		return nil, err
 	}
+	var pgSize int
 	// Fetch all environments if pageSize is "all"
 	if pageSize == "all" {
 		query.Find(&environmentsFetched)
+		pgSize = len(environmentsFetched)
 	} else {
 		// Convert page and pageSize from string to uint
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 32)
@@ -80,12 +82,13 @@ func (ep *EnvironmentPersister) GetEnvironments(orgID, search, order, page, page
 
 		// Fetch environments with pagination
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&environmentsFetched)
+		pgSize = int(pageSizeUint)
 	}
 
 	// Prepare the response
 	environmentsPage := &environment.EnvironmentPage{
 		Page:         int(pageUint),
-		PageSize:     len(environmentsFetched),
+		PageSize:     pgSize,
 		TotalCount:   int(count),
 		Environments: environmentsFetched,
 	}
@@ -285,9 +288,11 @@ func (ep *EnvironmentPersister) GetEnvironmentConnections(environmentID core.Uui
 	if err != nil {
 		return nil, err
 	}
+	var pgSize int
 	// Fetch all connections if pageSize is "all"
 	if pageSize == "all" {
 		query.Find(&connectionsFetched)
+		pgSize = len(connectionsFetched)
 	} else {
 		// Convert page and pageSize from string to uint
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 32)
@@ -297,10 +302,11 @@ func (ep *EnvironmentPersister) GetEnvironmentConnections(environmentID core.Uui
 
 		// Fetch connections with pagination
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&connectionsFetched)
+		pgSize = int(pageSizeUint)
 	}
 	connectionsPage := &connections.ConnectionPage{
 		Page:        int(pageUint),
-		PageSize:    len(connectionsFetched),
+		PageSize:    pgSize,
 		TotalCount:  int(count),
 		Connections: connectionsFetched,
 	}

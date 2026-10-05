@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -121,5 +122,55 @@ func TestDefaultLocalProviderUpdateWorkspace_ReturnsErrorForInvalidUUID(t *testi
 	_, err := provider.UpdateWorkspace(nil, &workspace.WorkspaceUpdatePayload{}, "not-a-uuid")
 	if err == nil {
 		t.Fatal("expected invalid workspace ID to return an error")
+	}
+}
+
+func TestWorkspacePersisterGetWorkspaces_PageSizeReflectsRequested(t *testing.T) {
+	dbHandler := newWorkspaceTestDB(t)
+	if err := dbHandler.AutoMigrate(&workspace.Workspace{}); err != nil {
+		t.Fatalf("failed to auto-migrate schemas workspace: %v", err)
+	}
+
+	wsID, _ := uuid.NewV4()
+	orgID, _ := uuid.NewV4()
+	now := time.Now().UTC().Round(time.Second)
+	ws := workspace.Workspace{
+		ID:             wsID,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		Name:           "Test Workspace",
+		OrganizationID: orgID,
+	}
+	if err := dbHandler.Create(&ws).Error; err != nil {
+		t.Fatalf("failed to persist workspace: %v", err)
+	}
+
+	persister := &WorkspacePersister{DB: dbHandler}
+	data, err := persister.GetWorkspaces("", "", "", "0", "10", "")
+	if err != nil {
+		t.Fatalf("GetWorkspaces failed: %v", err)
+	}
+
+	var res workspace.WorkspacePage
+	if err := json.Unmarshal(data, &res); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if res.PageSize != 10 {
+		t.Fatalf("expected PageSize 10, got %d", res.PageSize)
+	}
+
+	dataAll, err := persister.GetWorkspaces("", "", "", "0", "all", "")
+	if err != nil {
+		t.Fatalf("GetWorkspaces with all failed: %v", err)
+	}
+
+	var resAll workspace.WorkspacePage
+	if err := json.Unmarshal(dataAll, &resAll); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resAll.PageSize != 1 {
+		t.Fatalf("expected PageSize 1 for all, got %d", resAll.PageSize)
 	}
 }

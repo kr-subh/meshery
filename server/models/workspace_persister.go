@@ -85,9 +85,11 @@ func (wp *WorkspacePersister) GetWorkspaces(orgID, search, order, page, pageSize
 	if err != nil {
 		return nil, err
 	}
+	var pgSize int
 	// Fetch all workspaces if pageSize is "all"
 	if pageSize == "all" {
 		query.Find(&workspacesFetched)
+		pgSize = len(workspacesFetched)
 	} else {
 		// Convert page and pageSize from string to uint
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 32)
@@ -97,6 +99,7 @@ func (wp *WorkspacePersister) GetWorkspaces(orgID, search, order, page, pageSize
 
 		// Fetch workspaces with pagination
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&workspacesFetched)
+		pgSize = int(pageSizeUint)
 	}
 
 	// Convert fetched workspaces to AvailableWorkspace type
@@ -118,7 +121,7 @@ func (wp *WorkspacePersister) GetWorkspaces(orgID, search, order, page, pageSize
 	// Prepare the response
 	workspacesPage := &workspace.WorkspacePage{
 		Page:       int(pageUint),
-		PageSize:   len(workspacesFetched),
+		PageSize:   pgSize,
 		TotalCount: int(count),
 		Workspaces: availableWorkspaces,
 	}
@@ -339,8 +342,10 @@ func (wp *WorkspacePersister) GetWorkspaceEnvironments(workspaceID core.Uuid, se
 		return nil, err
 	}
 
+	var pgSize int
 	if pageSize == "all" {
 		query.Find(&environmentsFetched)
+		pgSize = len(environmentsFetched)
 	} else {
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 32)
 		if err != nil {
@@ -348,11 +353,12 @@ func (wp *WorkspacePersister) GetWorkspaceEnvironments(workspaceID core.Uuid, se
 		}
 
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&environmentsFetched)
+		pgSize = int(pageSizeUint)
 	}
 
 	environmentsPage := &environment.EnvironmentPage{
 		Page:         int(pageUint),
-		PageSize:     len(environmentsFetched),
+		PageSize:     pgSize,
 		TotalCount:   int(count),
 		Environments: environmentsFetched,
 	}
@@ -506,8 +512,10 @@ func (wp *WorkspacePersister) GetWorkspaceDesigns(workspaceID core.Uuid, search,
 		return nil, err
 	}
 
+	var pgSize int
 	if pageSize == "all" {
 		query.Find(&designsFetched)
+		pgSize = len(designsFetched)
 	} else {
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 64)
 		if err != nil {
@@ -515,6 +523,7 @@ func (wp *WorkspacePersister) GetWorkspaceDesigns(workspaceID core.Uuid, search,
 		}
 
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&designsFetched)
+		pgSize = int(pageSizeUint)
 	}
 
 	for _, d := range designsFetched {
@@ -528,7 +537,7 @@ func (wp *WorkspacePersister) GetWorkspaceDesigns(workspaceID core.Uuid, search,
 
 	designsPage := &workspace.MesheryDesignPage{
 		Page:       int(pageUint),
-		PageSize:   len(designsFetched),
+		PageSize:   pgSize,
 		TotalCount: int(count),
 		Designs:    schemaDesigns,
 	}
@@ -670,19 +679,22 @@ func (wp *WorkspacePersister) GetWorkspaceViews(workspaceID core.Uuid, search, o
 		return nil, err
 	}
 
+	var pgSize int
 	if pageSize == "all" {
 		query.Find(&viewsFetched)
+		pgSize = len(viewsFetched)
 	} else {
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&viewsFetched)
+		pgSize = int(pageSizeUint)
 	}
 
 	viewsPage := &viewv1beta2.MesheryViewPage{
 		Page:       int(pageUint),
-		PageSize:   len(viewsFetched),
+		PageSize:   pgSize,
 		TotalCount: int(count),
 		Views:      viewsFetched,
 	}
@@ -806,14 +818,17 @@ func (wp *WorkspacePersister) GetWorkspaceTeams(workspaceID core.Uuid, search, o
 		return nil, err
 	}
 
+	var pgSize int
 	if pageSize == "all" {
 		query.Find(&teamsFetched)
+		pgSize = len(teamsFetched)
 	} else {
 		pageSizeUint, err := strconv.ParseUint(pageSize, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		Paginate(uint(pageUint), uint(pageSizeUint))(query).Find(&teamsFetched)
+		pgSize = int(pageSizeUint)
 	}
 
 	type TeamPage struct {
@@ -825,7 +840,7 @@ func (wp *WorkspacePersister) GetWorkspaceTeams(workspaceID core.Uuid, search, o
 
 	teamsPage := &TeamPage{
 		Page:       int(pageUint),
-		PageSize:   len(teamsFetched),
+		PageSize:   pgSize,
 		TotalCount: int(count),
 		Teams:      teamsFetched,
 	}
